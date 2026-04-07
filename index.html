@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Dashboard - Register Patient</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f4f7f6; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
+        h2, h3 { color: #333; }
+        .stats { display: flex; gap: 20px; margin-bottom: 20px; }
+        .stat-box { background: #e3f2fd; padding: 10px 20px; border-radius: 5px; border: 1px solid #90caf9; }
+        input, select, textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #2196f3; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
+        button:hover { background-color: #1976d2; }
+        .returning-flag { display: none; color: #673ab7; font-weight: bold; margin-bottom: 10px; }
+        .back-link { text-align: right; margin-bottom: 15px; }
+        .back-link a { color: #2196f3; text-decoration: none; font-size: 0.9rem; }
+        .back-link a:hover { text-decoration: underline; }
+        .form-toggle { display: flex; gap: 10px; margin-bottom: 20px; }
+        .toggle-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #2196f3;
+            background: white;
+            color: #2196f3;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s, color 0.2s;
+        }
+        .toggle-btn.active {
+            background: #2196f3;
+            color: white;
+        }
+        .success-flag {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .history-result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f7f9fc;
+            border: 1px solid #d8e2ef;
+        }
+        .history-result table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .history-result th, .history-result td { padding: 10px; border: 1px solid #dfe6ed; text-align: left; }
+        .history-result th { background: #e9f2fb; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="back-link">
+        <a href="/">← Back to Dashboard</a>
+    </div>
+    
+    <h2>Hospital Dashboard</h2>
+    
+    <div class="stats">
+        <div class="stat-box"><strong>Total Patients:</strong> {{ total }}</div>
+        <div class="stat-box"><strong>Discharged:</strong> {{ discharged }}</div>
+    </div>
+
+    <hr>
+
+    <div class="form-toggle">
+        <button type="button" id="newPatientBtn" class="toggle-btn active">New Patient</button>
+        <button type="button" id="oldPatientBtn" class="toggle-btn">Old Patient</button>
+    </div>
+
+    <div id="new-patient-section">
+        <h3>New Patient Registration</h3>
+        <div id="register_success" class="success-flag">Details added successfully!</div>
+        <div id="returning_msg" class="returning-flag">✨ RETURNING PATIENT RECOGNIZED</div>
+
+        <form id="new_patient_form" action="/register" method="post">
+            <label>Phone Number:</label>
+            <input type="text" name="phone" id="phone_input" placeholder="Enter phone to check history..." required>
+
+            <label>Full Name:</label>
+            <input type="text" name="name" id="name_input" required>
+
+            <label>Age:</label>
+            <input type="number" name="age" id="age_input" required>
+
+            <label>Gender:</label>
+            <select name="gender" required>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <label>Address:</label>
+            <input type="text" name="address">
+
+            <label>Patient Problem / Symptoms:</label>
+            <textarea name="problem" rows="3" required></textarea>
+
+            <label>Urgency / Priority:</label>
+            <select name="priority" required>
+                <option value="Low">Low (Routine)</option>
+                <option value="Medium">Medium (Urgent)</option>
+                <option value="High">High (Emergency)</option>
+            </select>
+
+            <label>Assign Doctor / Specialist:</label>
+            <select name="assigned_doctor" required>
+                <option value="General Physician">General Physician</option>
+                <option value="Pediatrics">Pediatrics</option>
+                <option value="Dermatology">Dermatology</option>
+            </select>
+
+            <button type="submit">Register & Generate Token</button>
+        </form>
+    </div>
+
+    <div id="old-patient-section" style="display: none;">
+        <h3>Existing Patient History</h3>
+        <div class="form-group">
+            <label>Phone Number:</label>
+            <input type="text" id="history_phone_input" placeholder="Enter phone number" />
+        </div>
+        <button type="button" id="history_search_button">Search History</button>
+        <div id="history_result" class="history-result"></div>
+    </div>
+</div>
+
+<script>
+    const newPatientBtn = document.getElementById('newPatientBtn');
+    const oldPatientBtn = document.getElementById('oldPatientBtn');
+    const newPatientSection = document.getElementById('new-patient-section');
+    const oldPatientSection = document.getElementById('old-patient-section');
+    const registerSuccess = document.getElementById('register_success');
+    const returningMsg = document.getElementById('returning_msg');
+
+    function showSection(section) {
+        if (section === 'new') {
+            newPatientBtn.classList.add('active');
+            oldPatientBtn.classList.remove('active');
+            newPatientSection.style.display = 'block';
+            oldPatientSection.style.display = 'none';
+        } else {
+            newPatientBtn.classList.remove('active');
+            oldPatientBtn.classList.add('active');
+            newPatientSection.style.display = 'none';
+            oldPatientSection.style.display = 'block';
+        }
+    }
+
+    newPatientBtn.addEventListener('click', () => showSection('new'));
+    oldPatientBtn.addEventListener('click', () => showSection('old'));
+
+    document.getElementById('phone_input').addEventListener('blur', function() {
+        let phone = this.value.trim();
+        if(phone) {
+            fetch('/api/lookup/' + encodeURIComponent(phone))
+            .then(response => response.json())
+            .then(data => {
+                if(data.exists) {
+                    document.getElementById('name_input').value = data.name;
+                    document.getElementById('age_input').value = data.age;
+                    returningMsg.style.display = 'block';
+                } else {
+                    returningMsg.style.display = 'none';
+                }
+            })
+            .catch(() => {
+                returningMsg.style.display = 'none';
+            });
+        } else {
+            returningMsg.style.display = 'none';
+        }
+    });
+
+    document.getElementById('history_search_button').addEventListener('click', function() {
+        const phone = document.getElementById('history_phone_input').value.trim();
+        const resultContainer = document.getElementById('history_result');
+        resultContainer.innerHTML = '';
+
+        if (!phone) {
+            resultContainer.innerHTML = '<div class="history-result"><strong>Please enter a phone number.</strong></div>';
+            return;
+        }
+
+        fetch('/api/patient_history/' + encodeURIComponent(phone))
+            .then(response => response.json())
+            .then(data => {
+                if (!data.exists) {
+                    resultContainer.innerHTML = '<div class="history-result"><strong>No patient found for this phone number.</strong></div>';
+                    return;
+                }
+
+                let html = `
+                    <div class="history-result">
+                        <p><strong>Name:</strong> ${data.name}</p>
+                        <p><strong>Age:</strong> ${data.age}</p>
+                        <p><strong>Phone:</strong> ${data.phone}</p>
+                        <p><strong>Visits:</strong> ${data.visit_count}</p>
+                        <p><strong>Assigned Doctor:</strong> ${data.assigned_doctor}</p>
+                    </div>
+                `;
+
+                const records = Array.isArray(data.records) ? data.records : [];
+                if (records.length) {
+                    html += '<div class="history-result"><strong>Past Medicines / Tests</strong><table><thead><tr><th>Token</th><th>Type</th><th>Details</th><th>Date</th></tr></thead><tbody>';
+                    records.forEach(record => {
+                        const details = record.medicine || record.test_required || 'None';
+                        const type = record.medicine ? 'Medicine' : 'Test';
+                        const date = new Date(record.created_at).toLocaleString();
+                        html += `<tr><td>${record.token}</td><td>${type}</td><td>${details}</td><td>${date}</td></tr>`;
+                    });
+                    html += '</tbody></table></div>';
+                } else {
+                    html += '<div class="history-result"><strong>No previous medicines or tests found.</strong></div>';
+                }
+
+                resultContainer.innerHTML = html;
+            })
+            .catch(() => {
+                resultContainer.innerHTML = '<div class="history-result"><strong>Unable to fetch history. Please try again.</strong></div>';
+            });
+    });
+
+    document.getElementById('new_patient_form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        registerSuccess.style.display = 'none';
+
+        const formData = new FormData(this);
+        fetch('/api/register', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                registerSuccess.textContent = data.message;
+                registerSuccess.style.background = '#d4edda';
+                registerSuccess.style.color = '#155724';
+                registerSuccess.style.borderColor = '#c3e6cb';
+                registerSuccess.style.display = 'block';
+                document.getElementById('new_patient_form').reset();
+                returningMsg.style.display = 'none';
+            } else {
+                registerSuccess.textContent = data.message || 'Unable to register patient.';
+                registerSuccess.style.background = '#f8d7da';
+                registerSuccess.style.color = '#721c24';
+                registerSuccess.style.borderColor = '#f5c6cb';
+                registerSuccess.style.display = 'block';
+            }
+        })
+        .catch(() => {
+            registerSuccess.textContent = 'Unable to register patient. Please try again.';
+            registerSuccess.style.background = '#f8d7da';
+            registerSuccess.style.color = '#721c24';
+            registerSuccess.style.borderColor = '#f5c6cb';
+            registerSuccess.style.display = 'block';
+        });
+    });
+</script>
+
+</body>
+</html>

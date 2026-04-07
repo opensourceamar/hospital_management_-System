@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Doctor Consultation Page</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background-color: #f0f4f8; }
+        .doctor-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 700px; margin: auto; border-top: 8px solid #007bff; }
+        .patient-info { background: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .priority-badge { float: right; padding: 5px 12px; border-radius: 20px; color: white; font-weight: bold; font-size: 0.8rem; }
+        .priority-High { background: #d9534f; }
+        .priority-Medium { background: #f0ad4e; }
+        .priority-Low { background: #5cb85c; }
+        
+        fieldset { border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+        legend { font-weight: bold; color: #007bff; padding: 0 10px; }
+        
+        input[type="text"], textarea { width: 100%; padding: 10px; margin-top: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
+        .btn-scan { background-color: #17a2b8; color: white; }
+        .btn-pharmacy { background-color: #28a745; color: white; }
+        .btn:hover { opacity: 0.9; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="doctor-card">
+    <span class="priority-badge priority-{{ patient.priority }}">{{ patient.priority }} Priority</span>
+    <h2>Doctor Consultation</h2>
+    
+    <div class="patient-info">
+        <p><strong>Token:</strong> #{{ patient.token }}</p>
+        <p><strong>Patient Name:</strong> {{ patient.name }} ({{ patient.age }} yrs)</p>
+        <p><strong>Phone:</strong> {{ patient.phone }}</p>
+        <p><strong>Reported Problem:</strong> <i>{{ patient.problem }}</i></p>
+    </div>
+
+
+    {% if prescription_history and prescription_history|length > 0 %}
+    <fieldset style="border-color: #2196f3;">
+        <legend style="color: #2196f3;"><i class="bi bi-file-earmark-text"></i> 📋 Prescription History</legend>
+        <div style="background: #e3f2fd; padding: 15px; border-radius: 5px; margin-bottom: 10px;">
+            {% for prescription in prescription_history %}
+                <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #ccc;">
+                    <p><strong>Previous Prescription:</strong> {{ prescription.medicine }}</p>
+                    <p style="font-size: 0.9rem; color: #555;">Dispensed by: {{ prescription.dispensed_by or 'N/A' }}</p>
+                    {% if prescription.dispensed_notes %}
+                    <p style="font-size: 0.9rem; color: #555;">Notes: {{ prescription.dispensed_notes }}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </fieldset>
+    {% endif %}
+
+    <hr>
+
+    <fieldset>
+        <legend><i class="bi bi-capsule"></i> 💊 Prescription</legend>
+        <form id="prescription_form">
+            <input type="hidden" name="token" value="{{ patient.token }}">
+            <label>Medicine & Instructions:</label>
+            <textarea name="medicine" rows="3" placeholder="Enter medicine names and dosage..." required></textarea>
+            <button type="submit" class="btn btn-pharmacy">Send to Pharmacy</button>
+        </form>
+        <div id="prescription_success" style="display: none; color: #28a745; font-weight: bold; margin-top: 10px; padding: 10px; background: #e8f5e9; border-radius: 4px; text-align: center;">✅ Prescription submitted successfully!</div>
+    </fieldset>
+
+    <div style="text-align: center; margin-top: 10px;">
+        <a href="/" style="text-decoration: none; color: #666; font-size: 0.9rem;">← Back to Dashboard</a>
+    </div>
+</div>
+
+<script>
+    // AJAX form submission for prescription
+    document.getElementById('prescription_form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData);
+        
+        // Convert token to integer
+        data.token = parseInt(data.token);
+        
+        fetch('/api/prescription', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if(result.success) {
+                document.getElementById('prescription_success').style.display = 'block';
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            } else {
+                alert('Error: ' + (result.error || 'Submission failed'));
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pharmacy - Dispense Medicine</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; background-color: #f1f8e9; }
+        .pharmacy-card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 500px; margin: auto; border-top: 8px solid #2e7d32; }
+        .rx-box { background: #f9f9f9; border: 1px dashed #2e7d32; padding: 15px; margin: 20px 0; }
+        button { background-color: #2e7d32; color: white; padding: 12px; border: none; width: 100%; cursor: pointer; border-radius: 5px; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+
+<div class="pharmacy-card">
+    <h2>💊 Pharmacy Department</h2>
+    <p><strong>Patient Name:</strong> {{ prescription.patient.name }}</p>
+    <p><strong>Token:</strong> #{{ prescription.token }}</p>
+    
+    <div class="rx-box">
+        <strong>Prescribed Medicine:</strong>
+        <p style="font-size: 1.2rem; color: #1b5e20;">{{ prescription.medicine }}</p>
+    </div>
+
+    <form action="/pharmacy" method="post">
+        <input type="hidden" name="token" value="{{ prescription.token }}">
+        <button type="submit">Confirm Dispensing & Discharge</button>
+    </form>
+    
+    <div style="text-align: center; margin-top: 15px;">
+        <a href="/" style="color: #888; text-decoration: none; font-size: 0.8rem;">Cancel / Back to Dashboard</a>
+    </div>
+</div>
+
+</body>
+</html>
